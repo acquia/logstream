@@ -19,8 +19,10 @@ gem install logstream-*.gem
 logstream tail <site> <env>
 ```
 
-\<site\> is the site name according to Cloud API, which means it is prefixed
-with a realm, e.g. "prod:jaspan" or "devcloud:foobar".
+\<site\> and \<env\> are according to Cloud API, which means \<site\> prefixed
+with a realm, e.g. "prod:jaspan" or "devcloud:foobar". You need to have access
+to \<site\> via Cloud API, and have your Cloud API credentials stored in the
+standard location ($HOME/.acquia/cloudapi.conf).
 
 A variety of filtering and display options are available:
 
