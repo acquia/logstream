@@ -1,0 +1,160 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'net/http'
+require 'logger'
+require 'faye/websocket'
+require 'json'
+require 'thor'
+
+class QuickCloudAPI
+  def self.get(path, opts = {})
+    json = File.read("#{ENV['HOME']}/.acquia/cloudapi.conf")
+    config = JSON.load(json)
+    opts[:endpoint] ||= "https://cloudapi.acquia.com/v1"
+    uri = URI.parse("#{opts[:endpoint]}#{path}.json")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request.basic_auth(config['email'], config['key'])
+    response = http.request(request)
+    raise "HTTP #{response.code}: #{response.body}" if response.code.to_i != 200
+    JSON.parse(response.body)
+  end
+end
+
+class LogTailorCLI < Thor
+  desc "tail SITE ENV", "Stream log information for the specified site environment."
+  method_option(:types, :type => :array, :aliases => '-t',
+                :desc => "Only display listed log types",
+                :default => %w(apache-access php-error drupal-watchdog),
+                :banner => "apache-access apache-error php-error drupal-request drupal-watchdog bal-access"
+                )
+  method_option(:show, :type => :array, :aliases => '-s',
+                :desc => "Fow rows containing the column, only show them if the column matches the regexp.",
+                :banner => "column=regexp ..."
+                )
+  method_option(:hide, :type => :array, :aliases => '-h',
+                :desc => "For rows containing a column, do not show them if the column matches the regexp.",
+                :banner => "column=regexp ..."
+                )
+  method_option(:columns, :type => :array, :aliases => '-c',
+                :desc => "Display the specified columns.",
+                :default => %w(text),
+                :banner => "type disp_time unix_time text server http_status"
+                )
+  method_option(:no_color, :type => :boolean, :desc => 'Do not colorize log lines.')
+  method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
+  def tail(site, env)
+    begin
+      logger = ::Logger.new(STDOUT)
+
+      columns = {
+        :type => "%-15s",
+        :disp_time => "%s",
+        :server => "%-8s",
+        :text => "%s",
+      }
+
+      shows = Hash[options[:show].map { |s| s.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
+      hides = Hash[options[:hide].map { |h| h.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
+
+      EM.run do
+        info = QuickCloudAPI.get("/sites/#{site}/envs/#{env}/logstream", { :endpoint => options[:endpoint] })
+        puts info.inspect
+        ws = Faye::WebSocket::Client.new(info['url'])
+        site_env = "#{site}.#{env}"
+        ws.on :open do
+          logger.info "#{site_env}: connected"
+          ws.send(info['msg'])
+        end
+        ws.on :message do |body,type|
+          # puts body.data
+          msg = JSON.parse(body.data)
+          case msg['cmd']
+          when 'success'
+            color('logtailor-error', msg['code']) do
+              # puts "#{msg.inspect}"
+            end
+          when 'error'
+            color('logtailor-error', msg['code']) do
+              puts "#{msg.inspect}"
+            end
+            ws.close
+            EM.stop
+          when 'available'
+            send_msg(ws, { 'cmd' => 'enable', 'type' => msg['type'], 'server' => msg['server'] })
+          when 'line'
+            next unless msg.all? { |k,v| shows[k].nil? || v =~ shows[k] }
+            next if msg.any? { |k,v| hides[k] && v =~ hides[k] }
+            p = ''
+            color(msg['type'], msg['http_status']) do
+              options[:columns].each do |column|
+                print("#{p}#{columns[column.to_sym] || '%s'}" % [ msg[column.to_s] ])
+                p = ' '
+              end
+            end
+            puts
+          end
+        end
+        ws.on :close do
+          logger.info "#{site_env}: connection closed"
+          ws.close
+          EM.stop
+        end
+        ws.on :error do |error|
+          logger.info "#{site_env}: error: #{error.message}"
+          ws.close
+          EM.stop
+        end
+      end
+    rescue Interrupt
+      # exit cleanly
+    end
+  end
+
+  no_tasks do
+    # fixme: Derive a LogTailor class from Ws:EM:Client that knows messages
+    # are JSON.
+    def send_msg(ws, msg)
+      ws.send(msg.to_json)
+    end
+
+    GREEN = '32;1'
+    RED = '31;1'
+    YELLOW = '33;1'
+    BLUE = '34;1'
+    LOG_TYPE_COLORS = {
+      'apache-access' => {
+        /^5/ => RED,
+        /^4/ => YELLOW,
+        /^[123]/ => GREEN,
+      },
+      'bal-access' => {
+        /^5/ => RED,
+        /^4/ => YELLOW,
+        /^[123]/ => GREEN,
+      },
+      'apache-error' => RED,
+      'php-error' => RED,
+      'drupal-watchdog' => BLUE,
+      'logtailor-error' => RED,
+    }
+
+    def color(type, status)
+      color = LOG_TYPE_COLORS[type]
+      if color.is_a? Hash
+        color = color.find { |k,v| status =~ k }[1] rescue nil
+      end
+      color = nil if options[:no_color]
+      begin
+        print "\e[#{color}m" if color
+        yield
+      ensure
+        print "\e[0m" if color
+      end
+    end
+  end
+end
+
+LogTailorCLI.start
+
