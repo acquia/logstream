@@ -19,8 +19,8 @@ gem install logstream-*.gem
 logstream tail <site> <env>
 ```
 
-<site> is the site name according to Cloud API, which means it is prefixed with
-a realm, e.g. "prod:jaspan" or "devcloud:foobar".
+\<site\> is the site name according to Cloud API, which means it is prefixed
+with a realm, e.g. "prod:jaspan" or "devcloud:foobar".
 
 A variety of filtering and display options are available:
 
