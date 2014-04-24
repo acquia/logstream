@@ -20,6 +20,6 @@ Gem::Specification.new do |s|
   s.has_rdoc = false
 
   s.add_runtime_dependency('faye-websocket', ['~> 0.7.2'])
-  s.add_runtime_dependency('json')
-  s.add_runtime_dependency('thor')
+  s.add_runtime_dependency('json', ['~> 1.7.7'])
+  s.add_runtime_dependency('thor', ['~> 0.15.2'])
 end
