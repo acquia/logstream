@@ -2,7 +2,7 @@
 
 Logstream is an Acquia service for streaming logs from Acquia Cloud.
 
-It is currently in internal-only alpha release. There has a rough CLI and no
+It is currently in internal-only alpha release. There is a rough CLI and no
 web UI.
 
 ## Quick start
