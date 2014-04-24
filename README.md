@@ -10,10 +10,17 @@ This repo will eventually become public.
 
 ## Quick start
 
+(The gem build step will be unnecessary once this becomes public because we
+will host the built gem at rubygems.org.)
+
 ```
-bundle install
-ruby logstream.rb tail <site> <env>
+gem build logstream.gemspec
+gem install logstream-*.gem
+logstream tail <site> <env>
 ```
+
+<site> is the site name according to Cloud API, which means it is prefixed with
+a realm, e.g. "prod:jaspan" or "devcloud:foobar".
 
 A variety of filtering and display options are available:
 
