@@ -25,7 +25,7 @@ with a realm, e.g. "prod:jaspan" or "devcloud:foobar".
 A variety of filtering and display options are available:
 
 ```
-ruby logstream.rb help tail
+logstream help tail
 ```
 
 ## Details
