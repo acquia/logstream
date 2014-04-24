@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
-require 'net/http'
+require 'net/https'
 require 'logger'
 require 'faye/websocket'
 require 'json'
@@ -14,6 +14,9 @@ class QuickCloudAPI
     opts[:endpoint] ||= "https://cloudapi.acquia.com/v1"
     uri = URI.parse("#{opts[:endpoint]}#{path}.json")
     http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.ca_file = File.dirname(__FILE__) + "/ca.pem"
+    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
     request = Net::HTTP::Get.new(uri.request_uri)
     request.basic_auth(config['email'], config['key'])
     response = http.request(request)
