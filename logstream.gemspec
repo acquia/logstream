@@ -21,5 +21,6 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency('faye-websocket', ['~> 0.7.2'])
   s.add_runtime_dependency('json', ['~> 1.7.7'])
-  s.add_runtime_dependency('thor', ['~> 0.15.2'])
+  s.add_runtime_dependency('thor', ['~> 0.19.1'])
+  s.add_development_dependency('ruby-debug')
 end

@@ -1,1 +1,1 @@
-# empty
+require 'logstream/client'

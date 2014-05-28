@@ -2,10 +2,9 @@
 
 require 'rubygems'
 require 'net/https'
-require 'logger'
-require 'faye/websocket'
 require 'json'
 require 'thor'
+require 'logstream/client'
 
 class QuickCloudAPI
   class Error < StandardError; end
@@ -62,112 +61,21 @@ class LogTailorCLI < Thor
   method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
   def tail(site, env)
     begin
-      logger = ::Logger.new(STDOUT)
-
-      columns = {
-        :type => "%-15s",
-        :disp_time => "%s",
-        :server => "%-8s",
-        :text => "%s",
-      }
-
       shows = Hash[options[:show].map { |s| s.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
       hides = Hash[options[:hide].map { |h| h.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
 
-      EM.run do
-        info = QuickCloudAPI.get("/sites/#{site}/envs/#{env}/logstream", { :endpoint => options[:endpoint] })
-        ws = Faye::WebSocket::Client.new(info['url'])
-        site_env = "#{site}.#{env}"
-        ws.on :open do
-          ws.send(info['msg'])
-        end
-        ws.on :message do |body,type|
-          # puts body.data
-          msg = JSON.parse(body.data)
-          case msg['cmd']
-          when 'success'
-            color('logtailor-error', msg['code']) do
-              # puts "#{msg.inspect}"
-            end
-          when 'error'
-            color('logtailor-error', msg['code']) do
-              puts "#{msg.inspect}"
-            end
-            ws.close
-            EM.stop
-          when 'available'
-            send_msg(ws, { 'cmd' => 'enable', 'type' => msg['type'], 'server' => msg['server'] })
-          when 'line'
-            next unless msg.all? { |k,v| shows[k].nil? || v =~ shows[k] }
-            next if msg.any? { |k,v| hides[k] && v =~ hides[k] }
-            p = ''
-            color(msg['type'], msg['http_status']) do
-              options[:columns].each do |column|
-                print("#{p}#{columns[column.to_sym] || '%s'}" % [ msg[column.to_s] ])
-                p = ' '
-              end
-            end
-            puts
-          end
-        end
-        ws.on :close do
-          logger.info "#{site_env}: connection closed"
-          ws.close
-          EM.stop
-        end
-        ws.on :error do |error|
-          logger.info "#{site_env}: error: #{error.message}"
-          ws.close
-          EM.stop
-        end
-      end
-    rescue QuickCloudAPI::Error => e
-      puts "Cloud API error: #{e.message}"
-      exit(1)
-    rescue Interrupt
-      # exit cleanly
-    end
-  end
-
-  no_tasks do
-    # fixme: Derive a LogTailor class from Ws:EM:Client that knows messages
-    # are JSON.
-    def send_msg(ws, msg)
-      ws.send(msg.to_json)
-    end
-
-    GREEN = '32;1'
-    RED = '31;1'
-    YELLOW = '33;1'
-    BLUE = '34;1'
-    LOG_TYPE_COLORS = {
-      'apache-access' => {
-        /^5/ => RED,
-        /^4/ => YELLOW,
-        /^[123]/ => GREEN,
-      },
-      'bal-access' => {
-        /^5/ => RED,
-        /^4/ => YELLOW,
-        /^[123]/ => GREEN,
-      },
-      'apache-error' => RED,
-      'php-error' => RED,
-      'drupal-watchdog' => BLUE,
-      'logtailor-error' => RED,
-    }
-
-    def color(type, status)
-      color = LOG_TYPE_COLORS[type]
-      if color.is_a? Hash
-        color = color.find { |k,v| status =~ k }[1] rescue nil
-      end
-      color = nil if options[:no_color]
       begin
-        print "\e[#{color}m" if color
-        yield
-      ensure
-        print "\e[0m" if color
+        info = QuickCloudAPI.get("/sites/#{site}/envs/#{env}/logstream", { :endpoint => options[:endpoint] })
+        logstream = Logstream::Client.new({ 
+                                            :columns => options[:columns],
+                                            :shows => shows,
+                                            :hides => hides,
+                                            :no_color => options[:no_color],
+                                          })
+        logstream.run(info['url'], info['msg'])
+      rescue QuickCloudAPI::Error => e
+        puts "Cloud API error: #{e.message}"
+        exit(1)
       end
     end
   end
