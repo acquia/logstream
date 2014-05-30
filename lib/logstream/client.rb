@@ -60,12 +60,12 @@ module Logstream
           end
         end
         ws.on :close do
-          logger.info "#{@opts[:log_prefix]}: connection closed"
+          @opts[:logger].info "#{@opts[:log_prefix]}: connection closed"
           ws.close
           EM.stop
         end
         ws.on :error do |error|
-          logger.info "#{@opts[:log_prefix]}: error: #{error.message}"
+          @opts[:logger].info "#{@opts[:log_prefix]}: error: #{error.message}"
           ws.close
           EM.stop
         end
