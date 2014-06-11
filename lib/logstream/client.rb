@@ -12,6 +12,7 @@ module Logstream
         :hides => {},
         :columns => [ 'text' ],
         :no_color => false,
+        :debug => false,
       }.merge(opts)
       @opts = opts
       @columns = {
@@ -22,16 +23,24 @@ module Logstream
       }
     end
 
+    def debug(msg)
+      if @opts[:debug]
+        color('logtailor-debug', nil) do
+          puts msg
+        end
+      end
+    end
+
     def run(url, connect_message)
       EM.run do
-        # puts "DEBUG: #{url}"
+        debug(url)
         ws = Faye::WebSocket::Client.new(url)
         ws.on :open do
-          # puts "DEBUG: #{connect_message.inspect}"
+          debug(connect_message.inspect)
           ws.send(connect_message)
         end
         ws.on :message do |body,type|
-          # puts "DEBUG: #{body.data}"
+          debug(body.data)
           msg = JSON.parse(body.data)
           case msg['cmd']
           when 'success'
@@ -97,6 +106,7 @@ module Logstream
       'php-error' => RED,
       'drupal-watchdog' => BLUE,
       'logtailor-error' => RED,
+      'logtailor-debug' => BLUE,
     }
 
     def color(type, status)
