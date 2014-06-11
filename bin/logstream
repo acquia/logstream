@@ -57,7 +57,7 @@ class LogTailorCLI < Thor
                 :default => %w(text),
                 :banner => "type disp_time unix_time text server http_status"
                 )
-  method_option(:no_color, :type => :boolean, :desc => 'Do not colorize log lines.')
+  method_option(:color, :type => :boolean, :default => true, :desc => 'Turn on or off colorized lines.')
   method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
   def tail(site, env)
     begin
@@ -70,7 +70,7 @@ class LogTailorCLI < Thor
                                             :columns => options[:columns],
                                             :shows => shows,
                                             :hides => hides,
-                                            :no_color => options[:no_color],
+                                            :no_color => !options[:color],
                                           })
         logstream.run(info['url'], info['msg'])
       rescue QuickCloudAPI::Error => e
