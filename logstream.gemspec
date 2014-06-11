@@ -6,9 +6,9 @@ Gem::Specification.new do |s|
   s.version = "0.0.1"
   s.date = Time.now.strftime("%Y-%m-%d")
 
-  s.author = "engineering@acquia.com"
-  s.email = "engineering@acquia.com"
-  s.homepage = "http://acquia.com"
+  s.author = "Barry Jaspan"
+  s.email = "barry.jaspan@acquia.com"
+  s.homepage = "https://github.com/acquia/logstream"
 
   s.summary = "Acquia Logstream tools and library"
   s.description = "Logstream is an Acquia service for streaming logs from Acquia Cloud."
