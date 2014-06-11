@@ -15,26 +15,23 @@ UI</a> as well.
 
 ## Quick start
 
-1. Logstream works in conjunction with Acquia's <a
+* Logstream works in conjunction with Acquia's <a
 href="http://cloudapi.acquia.com/">Cloud API</a>. If you haven't already,
 install your <a href="https://accounts.acquia.com/account/security">Acquia
 Cloud Drush integration</a> files, which includes your Cloud API credentials.
 
-2. Install the Logstream CLI:
-
+* Install the Logstream CLI:
 ```
 $ gem install logstream
 ```
 
-3. List all the sites you have access to:
-
+* List all the sites you have access to:
 ```
 $ drush ac-site-list
 devcloud:mysite
 ```
 
-4. Stream logs from the production environment:
-
+* Stream logs from the production environment:
 ```
 $ logstream tail devcloud:mysite prod
 127.0.0.1 - - [11/Jun/2014:17:28:47 +0000] "GET / HTTP/1.1" 200 7708 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.114 Safari/537.36" http_host=mysite.com affinity="-" upstream_addr="10.218.29.150:80" hosting_site=mysite request_time=0.030 forwarded_for="64.80.128.4" upstream_status="200"
