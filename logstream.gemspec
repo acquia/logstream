@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(libpath) unless $LOAD_PATH.include?(libpath)
 
 Gem::Specification.new do |s|
   s.name = "logstream"
-  s.version = "0.0.0"
+  s.version = "0.0.1"
   s.date = Time.now.strftime("%Y-%m-%d")
 
   s.author = "engineering@acquia.com"
@@ -22,5 +22,4 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency('faye-websocket', ['~> 0.7.2'])
   s.add_runtime_dependency('json', ['~> 1.7.7'])
   s.add_runtime_dependency('thor', ['~> 0.19.1'])
-  s.add_development_dependency('ruby-debug')
 end
