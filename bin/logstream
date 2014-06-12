@@ -6,6 +6,7 @@ require 'json'
 require 'thor'
 require 'logstream/client'
 
+# @todo: Yeah, this is terrible. Replace it with a real Cloud API gem.
 class QuickCloudAPI
   class Error < StandardError; end
 
