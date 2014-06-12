@@ -10,7 +10,7 @@ supports streaming a variety of log sources:
 * Varnish cache logs
 
 This repository contains a client-side library and CLI. Acquia Cloud provides
-<a href="https://docs.acquia.com/cloud/configure/logging">a browser-based
+<a href="https://docs.acquia.com/cloud/configure/logging/stream">a browser-based
 UI</a> as well.
 
 ## Quick start
