@@ -54,7 +54,7 @@ module Logstream
             ws.close
             EM.stop
           when 'available'
-            send_msg(ws, { 'cmd' => 'enable', 'type' => msg['type'], 'server' => msg['server'] })
+            send_msg(ws, { 'cmd' => 'enable', 'type' => msg['type'], 'server' => msg['server'] }) if @opts[:types].include?(msg['type'])
           when 'line'
             next unless msg.all? { |k,v| @opts[:shows][k].nil? || v =~ shows[k] }
             next if msg.any? { |k,v| @opts[:hides][k] && v =~ hides[k] }

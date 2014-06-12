@@ -42,8 +42,8 @@ class LogTailorCLI < Thor
   desc "tail SITE ENV", "Stream log information for the specified site environment."
   method_option(:types, :type => :array, :aliases => '-t',
                 :desc => "Only display listed log types",
-                :default => %w(apache-access php-error drupal-watchdog),
-                :banner => "apache-access apache-error php-error drupal-request drupal-watchdog bal-access"
+                :default => %w(apache-request php-error drupal-watchdog varnish-request),
+                :banner => "apache-request apache-error php-error drupal-request drupal-watchdog varnish-request"
                 )
   method_option(:show, :type => :array, :aliases => '-s',
                 :desc => "Fow rows containing the column, only show them if the column matches the regexp.",
@@ -60,6 +60,7 @@ class LogTailorCLI < Thor
                 )
   method_option(:color, :type => :boolean, :default => true, :desc => 'Turn on or off colorized lines.')
   method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
+  method_option(:debug, :type => :boolean, :default => false, :desc => 'Turn on debugging.')
   def tail(site, env)
     begin
       shows = Hash[options[:show].map { |s| s.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
@@ -69,9 +70,11 @@ class LogTailorCLI < Thor
         info = QuickCloudAPI.get("/sites/#{site}/envs/#{env}/logstream", { :endpoint => options[:endpoint] })
         logstream = Logstream::Client.new({ 
                                             :columns => options[:columns],
+                                            :types => options[:types],
                                             :shows => shows,
                                             :hides => hides,
                                             :no_color => !options[:color],
+                                            :debug => options[:debug],
                                           })
         logstream.run(info['url'], info['msg'])
       rescue QuickCloudAPI::Error => e
