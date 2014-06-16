@@ -56,8 +56,8 @@ module Logstream
           when 'available'
             send_msg(ws, { 'cmd' => 'enable', 'type' => msg['type'], 'server' => msg['server'] }) if @opts[:types].include?(msg['type'])
           when 'line'
-            next unless msg.all? { |k,v| @opts[:shows][k].nil? || v =~ shows[k] }
-            next if msg.any? { |k,v| @opts[:hides][k] && v =~ hides[k] }
+            next unless msg.all? { |k,v| @opts[:shows][k].nil? || v =~ @opts[:shows][k] }
+            next if msg.any? { |k,v| @opts[:hides][k] && v =~ @opts[:hides][k] }
             p = ''
             color(msg['log_type'], msg['http_status']) do
               @opts[:columns].each do |column|
