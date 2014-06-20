@@ -93,7 +93,7 @@ Sent to indicate an available log source. Parameters:
 * display: the suggested display name for the log type (e.g. "Apache access")
 * server: the originating server for this stream
 
-### list-available (inbound) and list-availabe (outbound)
+### list-available (inbound) and list-available (outbound)
 
 Requests a list of all available log sources from one specified server or all
 servers. Parameters:
