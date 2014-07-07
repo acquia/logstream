@@ -57,7 +57,12 @@ other elements of the hash.
 
 Available commands are defined in the following subsections. Inbound
 commands can arrive from the upstream client (end-user client, or an
-upstream logtailor). Outbound commands are sent to the upstream client.
+upstream logtailor). Outbound commands are sent to the upstream
+client.
+
+In the examples that follow, "<-" indicates and inbound command and
+"->" indicates an outbound command. Those indicators are merely
+documentation for the examples; they are not part of the API.
 
 ### API example
 
