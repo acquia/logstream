@@ -95,6 +95,7 @@ $ logstream tail devcloud:mysite dev --debug
 -> {"cmd":"enable","type":"varnish-request","server":"bal-5"}
 <- {"server":"bal-5","cmd":"success","msg":{"server":"bal-5","type":"varnish-request","cmd":"enable"}}
 <- {"text":"107.0.255.129 - - [07/Jul/2014:20:28:53 +0000] \"GET / HTTP/1.0\" 200 2454 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36\" vhost=mysitedev.devcloud.acquia-sites.com host=mysitedev.devcloud.acquia-sites.com hosting_site=mysitedev pid=6863 request_time=80001 request_id=\"v-4fe9953a-0615-11e4-9fd8-1231392c7b9c\"","server":"srv-6","cmd":"line","http_status":200,"log_type":"apache-request","disp_time":"2014-07-07 20:28:53"}
+107.0.255.129 - - [07/Jul/2014:20:28:53 +0000] "GET / HTTP/1.0" 200 2454 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36" vhost=eebjaspandev.devcloud.acquia-sites.com host=eebjaspandev.devcloud.acquia-sites.com hosting_site=eebjaspandev pid=6863 request_time=80001 request_id="v-4fe9953a-0615-11e4-9fd8-1231392c7b9c"
 ```
 
 ### success (outbound)
