@@ -31,16 +31,24 @@ module Logstream
       end
     end
 
+    def debug_send(msg)
+      debug("-> #{msg}")
+    end
+
+    def debug_recv(msg)
+      debug("<- #{msg}")
+    end
+
     def run(url, connect_message)
       EM.run do
-        debug(url)
+        debug_send("connect to #{url}")
         ws = Faye::WebSocket::Client.new(url)
         ws.on :open do
-          debug(connect_message.inspect)
+          debug_send(connect_message)
           ws.send(connect_message)
         end
         ws.on :message do |body,type|
-          debug(body.data)
+          debug_recv(body.data)
           msg = JSON.parse(body.data)
           case msg['cmd']
           when 'success'
@@ -84,13 +92,16 @@ module Logstream
     end
 
     def send_msg(ws, msg)
-      ws.send(msg.to_json)
+      body = msg.to_json
+      debug_send(body)
+      ws.send(body)
     end
 
     GREEN = '32;1'
     RED = '31;1'
     YELLOW = '33;1'
     BLUE = '34;1'
+    CYAN = '46;37;1'
     LOG_TYPE_COLORS = {
       'apache-request' => {
         /^5/ => RED,
@@ -106,7 +117,7 @@ module Logstream
       'php-error' => RED,
       'drupal-watchdog' => BLUE,
       'logtailor-error' => RED,
-      'logtailor-debug' => BLUE,
+      'logtailor-debug' => CYAN,
     }
 
     def color(type, status)

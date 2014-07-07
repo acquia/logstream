@@ -59,6 +59,44 @@ Available commands are defined in the following subsections. Inbound
 commands can arrive from the upstream client (end-user client, or an
 upstream logtailor). Outbound commands are sent to the upstream client.
 
+### API example
+
+The logstream CLI --debug option shows API messages as they
+occur. Here is hypothetical debug output for the Dev environment of a
+site named "mysite" up to the first actual log message arriving. By
+default, the CLI enables the log types apache-request, php-error,
+drupal-watchdog, and varnish-request.
+
+```
+$ logstream tail devcloud:mysite dev --debug
+-> connect to wss://logstream.acquia.com/ah_websocket/logstream/v1
+-> {"site":"devcloud:mysite","d":"deaefc1f42a4d18cb932c2eb9fa75115fba5ab83f1a3c564767ef1ce8dabf2cc","t":1404764927,"env":"dev","cmd":"stream-environment"}
+<- {"cmd":"connected","server":"logstream-api-61"}
+<- {"cmd":"connected","server":"bal-4"}
+<- {"type":"bal-request","cmd":"available","server":"bal-4","display_type":"Balancer request"}
+<- {"type":"varnish-request","cmd":"available","server":"bal-4","display_type":"Varnish request"}
+-> {"cmd":"enable","type":"varnish-request","server":"bal-4"}
+<- {"server":"srv-6","cmd":"connected"}
+<- {"display_type":"Apache request","server":"srv-6","cmd":"available","type":"apache-request"}
+-> {"cmd":"enable","type":"apache-request","server":"srv-6"}
+<- {"display_type":"Apache error","server":"srv-6","cmd":"available","type":"apache-error"}
+<- {"display_type":"PHP error","server":"srv-6","cmd":"available","type":"php-error"}
+-> {"cmd":"enable","type":"php-error","server":"srv-6"}
+<- {"display_type":"Drupal watchdog","server":"srv-6","cmd":"available","type":"drupal-watchdog"}
+-> {"cmd":"enable","type":"drupal-watchdog","server":"srv-6"}
+<- {"display_type":"Drupal request","server":"srv-6","cmd":"available","type":"drupal-request"}
+<- {"server":"bal-5","cmd":"connected"}
+<- {"msg":{"type":"varnish-request","server":"bal-4","cmd":"enable"},"cmd":"success","server":"bal-4"}
+<- {"server":"srv-6","cmd":"success","msg":{"server":"srv-6","cmd":"enable","type":"apache-request"}}
+<- {"server":"srv-6","cmd":"success","msg":{"server":"srv-6","cmd":"enable","type":"php-error"}}
+<- {"server":"srv-6","cmd":"success","msg":{"server":"srv-6","cmd":"enable","type":"drupal-watchdog"}}
+<- {"server":"bal-5","display_type":"Balancer request","cmd":"available","type":"bal-request"}
+<- {"server":"bal-5","display_type":"Varnish request","cmd":"available","type":"varnish-request"}
+-> {"cmd":"enable","type":"varnish-request","server":"bal-5"}
+<- {"server":"bal-5","cmd":"success","msg":{"server":"bal-5","type":"varnish-request","cmd":"enable"}}
+<- {"text":"107.0.255.129 - - [07/Jul/2014:20:28:53 +0000] \"GET / HTTP/1.0\" 200 2454 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36\" vhost=mysitedev.devcloud.acquia-sites.com host=mysitedev.devcloud.acquia-sites.com hosting_site=mysitedev pid=6863 request_time=80001 request_id=\"v-4fe9953a-0615-11e4-9fd8-1231392c7b9c\"","server":"srv-6","cmd":"line","http_status":200,"log_type":"apache-request","disp_time":"2014-07-07 20:28:53"}
+```
+
 ### success (outbound)
 
 Sent by a variety of commands when a triggering command is completed
