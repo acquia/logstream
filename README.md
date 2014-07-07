@@ -57,7 +57,12 @@ other elements of the hash.
 
 Available commands are defined in the following subsections. Inbound
 commands can arrive from the upstream client (end-user client, or an
-upstream logtailor). Outbound commands are sent to the upstream client.
+upstream logtailor). Outbound commands are sent to the upstream
+client.
+
+In the examples that follow, "<-" indicates and inbound command and
+"->" indicates an outbound command. Those indicators are merely
+documentation for the examples; they are not part of the API.
 
 ### API example
 
@@ -103,36 +108,68 @@ $ logstream tail devcloud:mysite dev --debug
 Sent by a variety of commands when a triggering command is completed
 successfully (failures result in an error command). Since some commands execute
 on multiple servers, a single command may generate multiple success
-replies. Parameters:
+replies.
+
+Parameters:
 
 * msg: the message that succeeded
+
+Example:
+
+```
+<- {"cmd":"success","msg":{"type":"varnish-request","server":"bal-4","cmd":"enable"},"server":"bal-4"}
+```
 
 ### error (outbound)
 
 Sent when an error occurs, either because of a bad request or any kind of
 system or network failure. Since some commands execute on multiple servers, a
-single command may generate multiple error replies. Parameters:
+single command may generate multiple error replies.
+
+Parameters:
 
 * code: an HTTP-like status code; i.e.: 400 means your fault, 500 means our
   fault.
 * description: a human-readable description of the error condition
 * during: the operation that triggered the error
 
+Example:
+
+```
+<- {"cmd"=>"error", "during"=>"{\"description\":\"this is an invalid message\"}", "description"=>"message missing cmd paramter", "code"=>400, "server"=>"logstream-api-61"}
+```
+
 ### connected (outbound)
 
-Sent upon initial connection to a server. Parameters:
+Sent upon initial connection to a server.
+
+Parameters:
 
 * server: the name of the connected server
 
+Example:
+
+```
+<- {"cmd":"connected","server":"logstream-api-61"}
+```
+
 ### available (outbound)
 
-Sent to indicate an available log source. Parameters:
+Sent to indicate an available log source.
+
+Parameters:
 
 * type: the log type (e.g. apache-access)
 * display: the suggested display name for the log type (e.g. "Apache access")
 * server: the originating server for this stream
 
-### list-available (inbound) and list-available (outbound)
+Example:
+
+```
+<- {"type":"varnish-request","cmd":"available","server":"bal-4","display_type":"Varnish request"}
+```
+
+### list-available (inbound)
 
 Requests a list of all available log sources from one specified server or all
 servers. Parameters:
@@ -142,37 +179,72 @@ servers. Parameters:
 
 One or all servers will send available messages for each available log source.
 
+Example:
+
+```
+-> {"server":"srv-6","cmd":"list-available"}
+<- {"display_type":"Apache request","server":"srv-6","cmd":"available","type":"apache-request"}
+<- {"display_type":"Apache error","server":"srv-6","cmd":"available","type":"apache-error"}
+```
+
 ### enable (inbound)
 
 Starts streaming a specific source previously offered via an
-"available" command. Parameters:
+"available" command.
+
+Parameters:
 
 * type: the log type to start streaming
 * server: the originating server to stream from
 
 Sends a success or error reply.
 
+Example:
+
+```
+-> {"cmd":"enable","type":"varnish-request","server":"bal-4"}
+```
+
 ### disable (inbound)
 
-Stops streaming from an enabled source. Parameters:
+Stops streaming from an enabled source.
+
+Parameters:
 
 * type: the log type to stop streaming
 * server: the originating server to stream from
 
 Sends a success or error reply.
 
-### list-enabled (inbound) and list-enabled (outbound)
+Example:
+
+```
+-> {"cmd":"disable","type":"varnish-request","server":"bal-4"}
+```
+
+### list-enabled (inbound) and enabled (outbound)
 
 Requests a list of all enabled log sources from one specified server or all
-servers. Parameters:
+servers.
+
+Parameters:
 
 * server: the originating server to list; if not specified, all
   connected servers will reply.
 
-One or all servers will send a list-enabled reply. Parameters:
+One or all servers will send a enabled reply.
+
+Parameters:
 
 * enabled: an array of enabled log sources
 * server: the server these logs are enabled on
+
+Example:
+
+```
+-> {"server":"srv-6","cmd":"list-enabled"}
+<-> {"server":"srv-6","cmd":"enabled","enabled":["drupal-watchdog","apache-request","php-error"]}
+```
 
 ### line (outbound)
 
@@ -189,3 +261,8 @@ Line messages may also contain other data depending on the log type:
 * http_status: the HTTP status code, if the log line records an HTTP request
   (e.g. from Apache, nginx, Varnish, etc)
 
+Example:
+
+```
+<- {"text":"107.0.255.129 - - [07/Jul/2014:20:28:53 +0000] \"GET / HTTP/1.0\" 200 2454 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36\" vhost=mysitedev.devcloud.acquia-sites.com host=mysitedev.devcloud.acquia-sites.com hosting_site=mysitedev pid=6863 request_time=80001 request_id=\"v-4fe9953a-0615-11e4-9fd8-1231392c7b9c\"","server":"srv-6","cmd":"line","http_status":200,"log_type":"apache-request","disp_time":"2014-07-07 20:28:53"}
+```
