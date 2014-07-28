@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(libpath) unless $LOAD_PATH.include?(libpath)
 
 Gem::Specification.new do |s|
   s.name = "logstream"
-  s.version = "0.0.3"
+  s.version = "0.0.4"
   s.date = Time.now.strftime("%Y-%m-%d")
 
   s.author = "Barry Jaspan"
