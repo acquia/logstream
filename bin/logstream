@@ -56,7 +56,7 @@ class LogTailorCLI < Thor
   method_option(:columns, :type => :array, :aliases => '-c',
                 :desc => "Display the specified columns.",
                 :default => %w(text),
-                :banner => "type disp_time unix_time text server http_status"
+                :banner => "disp_time http_status log_type request_id server text"
                 )
   method_option(:color, :type => :boolean, :default => true, :desc => 'Turn on or off colorized lines.')
   method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
