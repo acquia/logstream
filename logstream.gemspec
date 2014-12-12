@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(libpath) unless $LOAD_PATH.include?(libpath)
 
 Gem::Specification.new do |s|
   s.name = "logstream"
-  s.version = "0.0.4"
+  s.version = "0.0.5"
   s.date = Time.now.strftime("%Y-%m-%d")
 
   s.author = "Barry Jaspan"
@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*"]
   s.has_rdoc = false
 
-  s.add_runtime_dependency('faye-websocket', ['~> 0.7.2'])
+  s.add_runtime_dependency('faye-websocket', ['~> 0.8.0'])
   s.add_runtime_dependency('json', ['~> 1.7.7'])
   s.add_runtime_dependency('thor', ['~> 0.19.1'])
 end
