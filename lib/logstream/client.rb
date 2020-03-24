@@ -5,7 +5,7 @@ require 'json'
 module Logstream
   class Client
     def initialize(opts = {})
-      opts = { 
+      opts = {
         :logger => Logger.new(STDOUT),
         :log_prefix => '',
         :shows => {},
@@ -44,8 +44,9 @@ module Logstream
         debug_send("connect to #{url}")
         ws = Faye::WebSocket::Client.new(url)
         ws.on :open do
-          debug_send(connect_message)
-          ws.send(connect_message)
+          # debug_send(connect_message)
+          # ws.send(connect_message)
+          @running = false
         end
         ws.on :message do |body,type|
           debug_recv(body.data)
@@ -55,6 +56,9 @@ module Logstream
             color('logtailor-error', msg['code']) do
               # puts "#{msg.inspect}"
             end
+          when 'connected'
+            send_msg(ws, connect_message) unless @running
+            @running = true
           when 'error'
             color('logtailor-error', msg['code']) do
               puts "#{msg.inspect}"

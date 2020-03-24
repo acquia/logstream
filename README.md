@@ -16,9 +16,7 @@ UI</a> as well.
 ## Quick start
 
 * Logstream works in conjunction with Acquia's <a
-href="http://cloudapi.acquia.com/">Cloud API</a>. If you haven't already,
-install your <a href="https://accounts.acquia.com/account/security">Acquia
-Cloud Drush integration</a> files, which includes your Cloud API credentials.
+href="http://cloudapi.acquia.com/">Cloud API</a>.
 
 * Install the Logstream CLI:
 ```
@@ -44,10 +42,10 @@ A variety of filtering and display options are available:
 $ logstream help tail
 ```
 
-## API v1
+## API v2
 
 Logstream communicates over TCP using the WebSocket protocol. Use the <a
-href="http://cloudapi.acquia.com/#GET__sites__site_envs__env_logstream-instance_route">logstream
+href="https://cloudapi-docs.acquia.com/#/Environments/getEnvironmentsLogstream">logstream
 Cloud API call</a> to retrieve the URL to connect to and an authenticated
 message to initial streaming for a particular Cloud environment.
 

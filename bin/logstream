@@ -1,37 +1,70 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
+
 require 'net/https'
 require 'json'
+require 'yaml'
 require 'thor'
 require 'logstream/client'
 
-# @todo: Yeah, this is terrible. Replace it with a real Cloud API gem.
-class QuickCloudAPI
+class CloudAPI
   class Error < StandardError; end
 
-  def self.get(path, opts = {})
-    confpath = "#{ENV['HOME']}/.acquia/cloudapi.conf"
-    begin
-      json = File.read(confpath)
-      config = JSON.load(json)
-    rescue Errno::ENOENT, JSON::ParserError => e
-      raise Error, "#{confpath} is missing or invalid. Download your Drush aliases from https://accounts.acquia.com/account/security to initialize it."
-    end
-    opts[:endpoint] ||= "https://cloudapi.acquia.com/v1"
-    uri = URI.parse("#{opts[:endpoint]}#{path}.json")
+  def initialize(opts = {})
+    opts[:endpoint] ||= "https://accounts.acquia.com/api/auth/oauth/token"
+    uri = URI.parse(opts[:endpoint])
+
+    params = {
+      :grant_type    => 'client_credentials',
+      :client_id     => opts[:key],
+      :client_secret => opts[:secret]
+    }
+    params.merge!(opts[:params]) if opts[:params]
+
+    opts[:headers] ||= {}
+    opts[:headers].merge!({
+      'Content-Type' => 'application/x-www-form-urlencoded'
+    })
+
+    uri = URI.parse("https://accounts.acquia.com/api/auth/oauth/token")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
-    http.ca_file = File.dirname(__FILE__) + "/../etc/ca.pem"
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    request = Net::HTTP::Get.new(uri.request_uri)
-    request.basic_auth(config['email'], config['key'])
+    request = Net::HTTP::Post.new(uri.path, opts[:headers])
+    request.body = URI.encode_www_form(params)
     response = http.request(request)
-    parsed = JSON.parse(response.body) rescue nil
+
+    @info = JSON.parse(response.body) rescue nil
     case response.code.to_i
     when 200
-      raise Error, "Unexpected reply #{response.body}" unless parsed
-      parsed
+      raise Error, "Unexpected reply #{response.body}" unless @info
+      true
+    else
+      raise Error, "HTTP #{response.code}: #{response.body}"
+    end
+  end
+
+  def get(query, opts = {})
+    headers = {
+      'Authorization' => "Bearer #{@info['access_token']}",
+      'Content-Type' => 'application/json',
+      'Accept' => 'application/json'
+    }
+
+    uri = URI.parse(query)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+    request = Net::HTTP::Get.new(uri.request_uri, headers)
+    response = http.request(request)
+
+    data = JSON.parse(response.body) rescue nil
+    case response.code.to_i
+    when 200
+      raise Error, "Unexpected reply #{response.body}" unless data
+      data
     else
       raise Error, "HTTP #{response.code}: #{response.body}"
     end
@@ -39,10 +72,10 @@ class QuickCloudAPI
 end
 
 class LogTailorCLI < Thor
-  desc "tail SITE ENV", "Stream log information for the specified site environment."
+  desc "tail ENV_ID", "Stream log information for the specified site environment given its ID."
   method_option(:types, :type => :array, :aliases => '-t',
                 :desc => "Only display listed log types",
-                :default => %w(apache-request php-error drupal-watchdog varnish-request),
+                :default => %w(apache-request apache-error php-error drupal-request drupal-watchdog varnish-request),
                 :banner => "apache-request apache-error php-error drupal-request drupal-watchdog varnish-request"
                 )
   method_option(:show, :type => :array, :aliases => '-s',
@@ -61,29 +94,59 @@ class LogTailorCLI < Thor
   method_option(:color, :type => :boolean, :default => true, :desc => 'Turn on or off colorized lines.')
   method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
   method_option(:debug, :type => :boolean, :default => false, :desc => 'Turn on debugging.')
-  def tail(site, env)
+  method_option(:config, :type => :string, :default => "#{ENV['HOME']}/.acquia/cloudapi.conf", :desc => "Config file containing the API 'key' and 'secret'")
+  def tail(env_id)
     begin
       shows = Hash[options[:show].map { |s| s.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
       hides = Hash[options[:hide].map { |h| h.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
 
+      config = load_config(options[:config])
+
       begin
-        info = QuickCloudAPI.get("/sites/#{site}/envs/#{env}/logstream", { :endpoint => options[:endpoint] })
-        logstream = Logstream::Client.new({ 
-                                            :columns => options[:columns],
-                                            :types => options[:types],
-                                            :shows => shows,
-                                            :hides => hides,
-                                            :no_color => !options[:color],
-                                            :debug => options[:debug],
-                                          })
-        logstream.run(info['url'], info['msg'])
-      rescue QuickCloudAPI::Error => e
+        client = CloudAPI.new({ :key => config['key'], :secret => config['secret'], :endpoint => options[:endpoint] })
+
+        logstream_config = client.get("https://cloud.acquia.com/api/environments/#{env_id}/logstream")
+        url = logstream_config['logstream']['url']
+        params = logstream_config['logstream']['params']
+
+        msg = {
+          'cmd'  => 'stream-environment',
+          'site' => params['site'],
+          'env'  => params['environment'],
+          't'    => params['t'],
+          'd'    => params['hmac']
+        }
+
+        logstream = Logstream::Client.new({
+          :columns => options[:columns],
+          :types => options[:types],
+          :shows => shows,
+          :hides => hides,
+          :no_color => !options[:color],
+          :debug => options[:debug],
+        })
+
+        logstream.run(url, msg)
+      rescue CloudAPI::Error => e
         puts "Cloud API error: #{e.message}"
         exit(1)
       end
     end
   end
+
+  def self.exit_on_failure?
+    true
+  end
+
+  private
+
+  def load_config(path)
+    begin
+      YAML::load_file(path)
+    rescue Errno::ENOENT, JSON::ParserError => e
+      raise Error, "#{path} is missing or invalid."
+    end
+  end
 end
 
 LogTailorCLI.start
-
