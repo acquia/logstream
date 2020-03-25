@@ -6,8 +6,7 @@ Gem::Specification.new do |s|
   s.version = "2.0.0"
   s.date = Time.now.strftime("%Y-%m-%d")
 
-  s.author = "Barry Jaspan"
-  s.email = "barry.jaspan@acquia.com"
+  s.author = "Acquia Engineering"
   s.homepage = "https://github.com/acquia/logstream"
 
   s.licenses = ['MIT']
