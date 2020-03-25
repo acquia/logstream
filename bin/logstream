@@ -1,45 +1,13 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
-require 'net/https'
-require 'json'
 require 'thor'
+require 'json'
 require 'logstream/client'
-
-# @todo: Yeah, this is terrible. Replace it with a real Cloud API gem.
-class QuickCloudAPI
-  class Error < StandardError; end
-
-  def self.get(path, opts = {})
-    confpath = "#{ENV['HOME']}/.acquia/cloudapi.conf"
-    begin
-      json = File.read(confpath)
-      config = JSON.load(json)
-    rescue Errno::ENOENT, JSON::ParserError => e
-      raise Error, "#{confpath} is missing or invalid. Download your Drush aliases from https://accounts.acquia.com/account/security to initialize it."
-    end
-    opts[:endpoint] ||= "https://cloudapi.acquia.com/v1"
-    uri = URI.parse("#{opts[:endpoint]}#{path}.json")
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.ca_file = File.dirname(__FILE__) + "/../etc/ca.pem"
-    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    request = Net::HTTP::Get.new(uri.request_uri)
-    request.basic_auth(config['email'], config['key'])
-    response = http.request(request)
-    parsed = JSON.parse(response.body) rescue nil
-    case response.code.to_i
-    when 200
-      raise Error, "Unexpected reply #{response.body}" unless parsed
-      parsed
-    else
-      raise Error, "HTTP #{response.code}: #{response.body}"
-    end
-  end
-end
+require 'logstream/cloudapi_v2'
 
 class LogTailorCLI < Thor
-  desc "tail SITE ENV", "Stream log information for the specified site environment."
+  desc "tail APPLICATION_UUID ENV", "Stream log information for the specified application environment."
   method_option(:types, :type => :array, :aliases => '-t',
                 :desc => "Only display listed log types",
                 :default => %w(apache-request php-error drupal-watchdog varnish-request),
@@ -59,15 +27,30 @@ class LogTailorCLI < Thor
                 :banner => "disp_time http_status log_type request_id server text"
                 )
   method_option(:color, :type => :boolean, :default => true, :desc => 'Turn on or off colorized lines.')
-  method_option(:endpoint, :type => :string, :desc => 'The Cloud API URL to connect to.')
   method_option(:debug, :type => :boolean, :default => false, :desc => 'Turn on debugging.')
-  def tail(site, env)
+  def tail(application_uuid, env)
     begin
       shows = Hash[options[:show].map { |s| s.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
       hides = Hash[options[:hide].map { |h| h.split('=') }.map { |k,v| [k, Regexp.new(v)] }] rescue {}
 
       begin
-        info = QuickCloudAPI.get("/sites/#{site}/envs/#{env}/logstream", { :endpoint => options[:endpoint] })
+        confpath = "#{ENV['HOME']}/.acquia/cloudapiv2.conf"
+        begin
+          json = File.read(confpath)
+          config = JSON.load(json)
+        rescue Errno::ENOENT, JSON::ParserError => e
+          raise Error, "#{confpath} is missing or invalid. Please configure your Cloud API v2 credentials"
+        end
+        cloudapi_client = Logstream::CloudAPIV2.new(config['api_key'], config['api_secret'])
+        environments = cloudapi_client.get_application_environments(application_uuid)
+        environment_uuid = nil
+        environments.each do |environment|
+          if environment['name'] == env
+            environment_uuid = environment['id']
+          end
+        end
+        raise Error, "No environment found with #{env} name." unless environment_uuid
+        stream_info = cloudapi_client.get_envirornment_logstream(environment_uuid)
         logstream = Logstream::Client.new({ 
                                             :columns => options[:columns],
                                             :types => options[:types],
@@ -76,8 +59,8 @@ class LogTailorCLI < Thor
                                             :no_color => !options[:color],
                                             :debug => options[:debug],
                                           })
-        logstream.run(info['url'], info['msg'])
-      rescue QuickCloudAPI::Error => e
+        logstream.run(stream_info['url'], stream_info['params'])
+      rescue Logstream::CloudAPIV2::Error => e
         puts "Cloud API error: #{e.message}"
         exit(1)
       end
@@ -85,5 +68,5 @@ class LogTailorCLI < Thor
   end
 end
 
-LogTailorCLI.start
+LogTailorCLI.start(ARGV)
 

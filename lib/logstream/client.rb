@@ -39,13 +39,20 @@ module Logstream
       debug("<- #{msg}")
     end
 
-    def run(url, connect_message)
+    def run(url, info)
       EM.run do
         debug_send("connect to #{url}")
+        connect_message = {
+          'cmd' => 'stream-environment',
+          'site' => info['site'],
+          'env' => info['environment'],
+          't' => info['t'],
+          'd' => info['hmac'],
+        }
         ws = Faye::WebSocket::Client.new(url)
         ws.on :open do
-          debug_send(connect_message)
-          ws.send(connect_message)
+          debug_send(connect_message.to_json)
+          ws.send(connect_message.to_json)
         end
         ws.on :message do |body,type|
           debug_recv(body.data)

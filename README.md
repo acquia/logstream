@@ -15,25 +15,24 @@ UI</a> as well.
 
 ## Quick start
 
-* Logstream works in conjunction with Acquia's <a
-href="http://cloudapi.acquia.com/">Cloud API</a>. If you haven't already,
-install your <a href="https://accounts.acquia.com/account/security">Acquia
-Cloud Drush integration</a> files, which includes your Cloud API credentials.
+* Logstream works in conjunction with Acquia's [Cloud API](https://cloudapi-docs.acquia.com/). In order to use Cloud API you will need to generate credentials for your account. [Cloud API v2 authentication](https://docs.acquia.com/acquia-cloud/develop/api/auth/#generating-an-api-token) explains how to generate the credentials. Place the credentials in `$HOME/.acquia/cloudapiv2.conf` . This file is in JSON format with api_key and api_secret defined.
+```
+{ 
+  "api_key" : "key",
+  "api_secret" : "secret"
+}
+```
 
 * Install the Logstream CLI:
 ```
 $ gem install logstream
 ```
 
-* List all the sites you have access to:
-```
-$ drush ac-site-list
-devcloud:mysite
-```
+* Find the UUID of the application you would like to stream logs for. Documentation on how to find applicaiton UUID can be found [here](https://docs.acquia.com/acquia-cloud/manage/applications/#obtaining-your-subscription-s-application-id)
 
 * Stream logs from the production environment:
 ```
-$ logstream tail devcloud:mysite prod
+$ logstream tail 55ea1945-4aa6-4c56-bb7b-2108565e22d6 prod
 127.0.0.1 - - [11/Jun/2014:17:28:47 +0000] "GET / HTTP/1.1" 200 7708 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.114 Safari/537.36" http_host=mysite.com affinity="-" upstream_addr="10.218.29.150:80" hosting_site=mysite request_time=0.030 forwarded_for="64.80.128.4" upstream_status="200"
 ... etc ...
 ```
@@ -44,11 +43,10 @@ A variety of filtering and display options are available:
 $ logstream help tail
 ```
 
-## API v1
+## API v2
 
-Logstream communicates over TCP using the WebSocket protocol. Use the <a
-href="http://cloudapi.acquia.com/#GET__sites__site_envs__env_logstream-instance_route">logstream
-Cloud API call</a> to retrieve the URL to connect to and an authenticated
+Logstream communicates over TCP using the WebSocket protocol. Use the [logstream
+Cloud API call](https://cloudapi-docs.acquia.com/#/Environments/getEnvironmentsLogstream) to retrieve the URL to connect to and an authenticated
 message to initial streaming for a particular Cloud environment.
 
 Messages use text data frames, and contain JSON-encoded hashes. Each message
@@ -73,7 +71,7 @@ default, the CLI enables the log types apache-request, php-error,
 drupal-watchdog, and varnish-request.
 
 ```
-$ logstream tail devcloud:mysite dev --debug
+$ logstream tail 55ea1945-4aa6-4c56-bb7b-2108565e22d6 dev --debug
 -> connect to wss://logstream.acquia.com/ah_websocket/logstream/v1
 -> {"site":"devcloud:mysite","d":"deaefc1f42a4d18cb932c2eb9fa75115fba5ab83f1a3c564767ef1ce8dabf2cc","t":1404764927,"env":"dev","cmd":"stream-environment"}
 <- {"cmd":"connected","server":"logstream-api-61"}
