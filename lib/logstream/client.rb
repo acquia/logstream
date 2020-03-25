@@ -39,18 +39,28 @@ module Logstream
       debug("<- #{msg}")
     end
 
-    def run(url, connect_message)
+    def run(url, info)
       EM.run do
         debug_send("connect to #{url}")
+        connect_message = {
+          'cmd' => 'stream-environment',
+          'site' => info['site'],
+          'env' => info['environment'],
+          't' => info['t'],
+          'd' => info['hmac'],
+        }
         ws = Faye::WebSocket::Client.new(url)
         ws.on :open do
-          debug_send(connect_message)
-          ws.send(connect_message)
+          @running = false
         end
         ws.on :message do |body,type|
           debug_recv(body.data)
           msg = JSON.parse(body.data)
           case msg['cmd']
+          when 'connected'
+            debug_send(connect_message.to_json)
+            ws.send(connect_message.to_json) unless @running
+            @running = true
           when 'success'
             color('logtailor-error', msg['code']) do
               # puts "#{msg.inspect}"

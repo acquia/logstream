@@ -3,11 +3,10 @@ $LOAD_PATH.unshift(libpath) unless $LOAD_PATH.include?(libpath)
 
 Gem::Specification.new do |s|
   s.name = "logstream"
-  s.version = "0.0.8"
+  s.version = "2.0.0"
   s.date = Time.now.strftime("%Y-%m-%d")
 
-  s.author = "Barry Jaspan"
-  s.email = "barry.jaspan@acquia.com"
+  s.author = "Acquia Engineering"
   s.homepage = "https://github.com/acquia/logstream"
 
   s.licenses = ['MIT']
@@ -21,7 +20,6 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*"]
 
   s.add_runtime_dependency('faye-websocket', ['~> 0.10.0'])
-  s.add_runtime_dependency('json', ['>= 1.7.7'])
   s.add_runtime_dependency('thor', ['~> 0.20.0'])
 
   s.required_ruby_version = '>= 2.4'
