@@ -21,7 +21,6 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*"]
 
   s.add_runtime_dependency('faye-websocket', ['~> 0.10.0'])
-  s.add_runtime_dependency('json', ['>= 1.7.7'])
   s.add_runtime_dependency('thor', ['~> 0.20.0'])
 
   s.required_ruby_version = '>= 2.4'
