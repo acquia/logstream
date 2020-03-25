@@ -12,7 +12,7 @@ module Logstream
       @client_id = client_id
       @client_secret = client_secret
     end
-  
+
     def get(path)
       bearer_token = get_token
       uri = URI.parse("#{CLOUDAPI_ENDPOINT}#{path}")
@@ -43,7 +43,7 @@ module Logstream
       raise Error, "Unexpected reply #{response}" unless response['logstream']
       response['logstream']
     end
-  
+
     def get_token
       uri = URI.parse("https://accounts.acquia.com/api/auth/oauth/token")
       response = Net::HTTP.post_form(uri, 'client_id' => @client_id, 'client_secret' => @client_secret, 'grant_type' => 'client_credentials')
