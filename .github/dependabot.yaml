@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    pull-request-branch-name:
+      separator: "-"
+    groups:
+      bundler-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    pull-request-branch-name:
+      separator: "-"
+    groups:
+      docker-dependencies:
+        patterns:
+          - "*"
+registries:
+  jfrog:
+    type: docker-registry
+    url: https://jfrog.ais.acquia.io
+    username: github_dependabot_token
+    password: ${{secrets.JFROG_GITHUB_DEPENDABOT_TOKEN}}
